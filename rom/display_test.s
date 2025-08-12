@@ -21,13 +21,13 @@ ROM_START:
     STA VIA_DDR_A                   ; Set upper 3 bits of port A to output
 
     LDA #$38                        ; Load accumulator with $38 (binary 00111000)
-    JSR DISPLAY_COMMAND		    ; Initial the display
+    JSR DISPLAY_COMMAND		        ; Initial the display
     
     LDA #$0E                        ; Load accumulator with $0E (binary 00001110)
-    JSR DISPLAY_COMMAND 	    ; Display ON, Cursor ON, Blink OFF
+    JSR DISPLAY_COMMAND 	        ; Display ON, Cursor ON, Blink OFF
 
     LDA #06                         ; Load accumulator with $06 (binary 00000110)
-    JSR DISPLAY_COMMAND  	    ; Increment cursor, no shift
+    JSR DISPLAY_COMMAND  	        ; Increment cursor, no shift
 
     LDA #'D'
     JSR DISPLAY_PRINT
@@ -46,7 +46,7 @@ LOOP:
     JMP LOOP                        ; Infinite loop to keep the program running
 
 DISPLAY_COMMAND:
-    PHA				    ; Push Accum onto the stack 
+    PHA				                ; Push Accum onto the stack 
     STA VIA_PORT_B                  ; Load the command into port B 
 
     LDA #0   
@@ -57,11 +57,11 @@ DISPLAY_COMMAND:
 
     LDA #0                          ; Clear accumulator
     STA VIA_PORT_A                  ; Clear port A again
-    PLA				    ; Pop the stack back to the Accum
+    PLA				                ; Pop the stack back to the Accum
     RTS
 
 DISPLAY_PRINT:
-    PHA 			    ; Push Accum onto the stack
+    PHA 			                ; Push Accum onto the stack
     STA VIA_PORT_B                  ; Load character into port B
 
     LDA #DISP_RS                    ; Set Register Select for data
@@ -72,7 +72,7 @@ DISPLAY_PRINT:
 
     LDA #0
     STA VIA_PORT_A                  ; Clear port A again
-    PLA 			    ; Pop the stack back to the Accum
+    PLA 			                ; Pop the stack back to the Accum
     RTS
 
 .segment "VEC"

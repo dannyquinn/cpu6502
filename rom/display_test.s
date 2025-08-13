@@ -29,19 +29,14 @@ ROM_START:
     LDA #06                         ; Load accumulator with $06 (binary 00000110)
     JSR DISPLAY_COMMAND  	        ; Increment cursor, no shift
 
-    LDA #'D'
-    JSR DISPLAY_PRINT
-
-    LDA #'A'
-    JSR DISPLAY_PRINT
-
-    LDA #'N'
-    JSR DISPLAY_PRINT
-    JSR DISPLAY_PRINT
-
-    LDA #'Y'
-    JSR DISPLAY_PRINT
-
+    LDX #0                          ; Clear X register for loop
+PRINT:
+    LDA message, X                  ; Load character from message at index X
+    BEQ LOOP                        ; If character is null (end of string), jump to LOOP
+    JMP DISPLAY_PRINT               ; Jump to DISPLAY_PRINT to print character
+    INX 
+    JMP PRINT                       ; Loop until all characters are printed
+    
 LOOP:
     JMP LOOP                        ; Infinite loop to keep the program running
 
@@ -97,6 +92,8 @@ DISPLAY_BUSY:
     STA VIA_DDR_B                   ; Set Port B back to output 
     PLA                             ; Pop the stack back to the Accum
     RTS 
+
+message: .asciiz "DANNY"            ; Message to display on the screen
 
 .segment "VEC"
 .word $0000                         ; Interrupt vector

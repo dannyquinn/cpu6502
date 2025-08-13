@@ -47,6 +47,7 @@ LOOP:
 
 DISPLAY_COMMAND:
     PHA				                ; Push Accum onto the stack 
+    JSR DISPLAY_WAIT                ; Wait for display to be ready
     STA VIA_PORT_B                  ; Load the command into port B 
 
     LDA #0   
@@ -62,6 +63,7 @@ DISPLAY_COMMAND:
 
 DISPLAY_PRINT:
     PHA 			                ; Push Accum onto the stack
+    JSR DISPLAY_WAIT                ; Wait for display to be ready
     STA VIA_PORT_B                  ; Load character into port B
 
     LDA #DISP_RS                    ; Set Register Select for data
@@ -74,6 +76,27 @@ DISPLAY_PRINT:
     STA VIA_PORT_A                  ; Clear port A again
     PLA 			                ; Pop the stack back to the Accum
     RTS
+
+DISPLAY_WAIT: 
+    PHA                             ; Push Accum onto the stack
+    LDA #$0 
+    STA VIA_DDR_B                   ; Set Port B as input to wait for display ready       
+
+DISPLAY_BUSY:
+    LDA #DISP_RW 
+    STA VIA_PORT_A                  ; Set Read/Write to read mode
+    LDA #(DISP_RW | DISP_EN)          
+    STA VIA_PORT_A                  ; Enable display for reading
+    LDA VIA_PORT_B                  ; Read from Port B (wait for display to be ready)
+    AND #$80                        ; Check if the display is busy
+    BNE DISPLAY_BUSY                ; If busy, loop back to check again 
+
+    LDA #0 
+    STA VIA_PORT_A                  ; Clear port A after reading
+    LDA #$FF 
+    STA VIA_DDR_B                   ; Set Port B back to output 
+    PLA                             ; Pop the stack back to the Accum
+    RTS 
 
 .segment "VEC"
 .word $0000                         ; Interrupt vector

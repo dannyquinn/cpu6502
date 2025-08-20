@@ -29,11 +29,14 @@ ROM_START:
     LDA #06                         ; Load accumulator with $06 (binary 00000110)
     JSR DISPLAY_COMMAND  	        ; Increment cursor, no shift
 
+    LDA #01 
+    JSR DISPLAY_COMMAND             ; Clear the display - for when reseting cpu
+
     LDX #0                          ; Clear X register for loop
 PRINT:
     LDA message, X                  ; Load character from message at index X
     BEQ LOOP                        ; If character is null (end of string), jump to LOOP
-    JMP DISPLAY_PRINT               ; Jump to DISPLAY_PRINT to print character
+    JSR DISPLAY_PRINT               ; Jump to DISPLAY_PRINT to print character
     INX 
     JMP PRINT                       ; Loop until all characters are printed
     

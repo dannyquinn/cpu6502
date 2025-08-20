@@ -1,6 +1,5 @@
 .setcpu "65C02"
 .segment "ROM"
-
 ; Constants
 VIA_PORT_B = $6000                  ; Port B
 VIA_PORT_A = $6001                  ; Port A
@@ -10,6 +9,11 @@ VIA_DDR_A  = $6003                  ; Data Direction Register for Port A
 DISP_EN    = $80                    ; Display Enable bit
 DISP_RW    = $40                    ; Read/Write bit
 DISP_RS    = $20                    ; Register Select bit
+
+value      = $0200 ; 2 bytes
+mod10      = $0202 ; 2 bytes
+message    = $0204 ; 6 bytes
+counter    = $020A ; 2 bytes
 
 ROM_START:
     LDX #$FF                        ; Set the stack pointer first load X with $FF
@@ -29,20 +33,88 @@ ROM_START:
     LDA #06                         ; Load accumulator with $06 (binary 00000110)
     JSR DISPLAY_COMMAND  	        ; Increment cursor, no shift
 
-    LDA #01 
-    JSR DISPLAY_COMMAND             ; Clear the display - for when reseting cpu
+    LDA #0 
+    STA counter 
+    STA counter + 1
 
-    LDX #0                          ; Clear X register for loop
-PRINT:
-    LDA message, X                  ; Load character from message at index X
-    BEQ LOOP                        ; If character is null (end of string), jump to LOOP
-    JSR DISPLAY_PRINT               ; Jump to DISPLAY_PRINT to print character
-    INX 
-    JMP PRINT                       ; Loop until all characters are printed
-    
+    CLI
+
 LOOP:
-    JMP LOOP                        ; Infinite loop to keep the program running
+    LDA #02 
+    JSR DISPLAY_COMMAND             ; Return to home
+    LDA #0 
+    STA message 
 
+    LDA counter 
+    STA value 
+    LDA counter + 1
+    STA value + 1
+
+DIVIDE:
+    lda #0
+    STA mod10 
+    STA mod10 + 1 
+    CLC
+    LDX #16 
+
+DIVLOOP:
+    ROL value 
+    ROL value + 1 
+    ROL mod10 
+    ROL mod10 + 1
+
+    SEC 
+    LDA mod10 
+    SBC #10 
+    TAY 
+    LDA mod10 + 1
+    SBC #0 
+    BCC IGNORE_RESULT 
+    STY mod10 
+    STA mod10 + 1
+IGNORE_RESULT: 
+    DEX 
+    BNE DIVLOOP 
+    ROL value
+    ROL value + 1
+    LDA mod10 
+    CLC 
+
+    ADC #'0' 
+    JSR PUSH_CHAR
+
+    LDA value 
+    ORA value + 1
+    BNE DIVIDE
+
+
+    LDX #0 
+PRINT:
+    LDA message, x 
+    BEQ LOOP 
+    JSR DISPLAY_PRINT 
+    INX 
+    JMP PRINT 
+
+number: .word 1729
+
+PUSH_CHAR:
+    PHA 
+    LDY #0 
+
+CHAR_LOOP:
+    LDA message, y 
+    TAX 
+    PLA 
+    STA message, y 
+    INY 
+    TXA 
+    PHA 
+    BNE CHAR_LOOP
+    PLA 
+    STA message, y
+
+    RTS 
 DISPLAY_COMMAND:
     PHA				                ; Push Accum onto the stack 
     JSR DISPLAY_WAIT                ; Wait for display to be ready
@@ -97,9 +169,16 @@ DISPLAY_BUSY:
     PLA                             ; Pop the stack back to the Accum
     RTS 
 
-message: .asciiz "DANNYS COMPUTER"  ; Message to display on the screen
+NMI: 
+IRQ: 
+    INC counter 
+    BNE EXIT_IRQ 
+    INC counter + 1
+EXIT_IRQ:
+    RTI
+
 
 .segment "VEC"
-.word $0000                         ; Interrupt vector
+.word NMI                           ; Interrupt vector
 .word ROM_START                     ; Reset vector
-.word $0000                         ; Interrupt vector
+.word IRQ                           ; Interrupt vector

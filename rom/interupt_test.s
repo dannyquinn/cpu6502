@@ -1,184 +1,213 @@
 .setcpu "65C02"
 .segment "ROM"
-; Constants
-VIA_PORT_B = $6000                  ; Port B
-VIA_PORT_A = $6001                  ; Port A
-VIA_DDR_B  = $6002                  ; Data Direction Register for Port B
-VIA_DDR_A  = $6003                  ; Data Direction Register for Port A
 
-DISP_EN    = $80                    ; Display Enable bit
-DISP_RW    = $40                    ; Read/Write bit
-DISP_RS    = $20                    ; Register Select bit
+; IO Addresses 
+via_port_b          = $6000             ; 8 bit in/out port b
+via_port_a          = $6001             ; 8 bit in/out port a
+via_ddr_b           = $6002             ; port b data direction register 
+via_ddr_a           = $6003             ; port a data direction register
+via_pcr             = $600c             ; peripheral control register 
+via_ifr             = $600d             ; interupt flags register
+via_ier             = $600e             ; interupt enable register
 
-value      = $0200 ; 2 bytes
-mod10      = $0202 ; 2 bytes
-message    = $0204 ; 6 bytes
-counter    = $020A ; 2 bytes
+; Display Control Flags 
+disp_enable         = $80               ; display enable bit 
+disp_rw             = $40               ; read/write bit
+disp_rs             = $20               ; register select bit
 
-ROM_START:
-    LDX #$FF                        ; Set the stack pointer first load X with $FF
-    TXS                             ; Transfer X to the stack pointer
+; Variables 
 
-    LDA #$FF
-    STA VIA_DDR_B                   ; Set all data bits on port B to output
-    LDA #$E0                        ; Load accumulator with $E0 (binary 11100000)
-    STA VIA_DDR_A                   ; Set upper 3 bits of port A to output
+value               = $0200             ; 2 bytes 
+mod10               = $0202             ; 2 bytes 
+message             = $0204             ; 6 bytes 
+counter             = $020A             ; 8 bytes
 
-    LDA #$38                        ; Load accumulator with $38 (binary 00111000)
-    JSR DISPLAY_COMMAND		        ; Initial the display
-    
-    LDA #$0E                        ; Load accumulator with $0E (binary 00001110)
-    JSR DISPLAY_COMMAND 	        ; Display ON, Cursor ON, Blink OFF
+rom: 
+    ldx #$FF                            ; set the stack pointer start to 01FF 
+    txs                                 ; transfer x to stack pointer
 
-    LDA #06                         ; Load accumulator with $06 (binary 00000110)
-    JSR DISPLAY_COMMAND  	        ; Increment cursor, no shift
+    ; setup ports for display module 
+    lda #$FF                            ; set all port b pins to output 
+    sta via_ddr_b                   
+    lda #$E0                            ; set the top 3 bits on port a to output 
+    sta via_ddr_a 
 
-    LDA #0 
-    STA counter 
-    STA counter + 1
+    ; initialise display module 
+    lda #$38                            ; Initialise display 
+    jsr display_command 
 
-    CLI
+    lda #$0E                            ; Display on, cursor on, blink off 
+    jsr display_command 
 
-LOOP:
-    LDA #02 
-    JSR DISPLAY_COMMAND             ; Return to home
-    LDA #0 
-    STA message 
+    lda #$06                            ; increment cursor, no shift 
+    jsr display_command 
 
-    LDA counter 
-    STA value 
-    LDA counter + 1
-    STA value + 1
+    ; initialise variables 
+    lda #0 
+    sta counter                         ; set counter (2 bytes) to zero
+    sta counter + 1
 
-DIVIDE:
-    lda #0
-    STA mod10 
-    STA mod10 + 1 
-    CLC
-    LDX #16 
+    ; interupts 
+    lda #82                             ; enable CA1 interupt on via 
+    sta via_ier 
 
-DIVLOOP:
-    ROL value 
-    ROL value + 1 
-    ROL mod10 
-    ROL mod10 + 1
+    lda #0                              ; clear peripheral control register 
+    sta via_pcr                         ; 2nd bit = 0 sets CA1 to neg-edge trigger 
 
-    SEC 
-    LDA mod10 
-    SBC #10 
-    TAY 
-    LDA mod10 + 1
-    SBC #0 
-    BCC IGNORE_RESULT 
-    STY mod10 
-    STA mod10 + 1
-IGNORE_RESULT: 
-    DEX 
-    BNE DIVLOOP 
-    ROL value
-    ROL value + 1
-    LDA mod10 
-    CLC 
+    cli                                 ; enable processor interupt 
 
-    ADC #'0' 
-    JSR PUSH_CHAR
+loop: 
+    lda #$02                            ; move cursor back to top of display
+    jsr display_command
 
-    LDA value 
-    ORA value + 1
-    BNE DIVIDE
+    lda #0 
+    sta message                         ; clear message variable 
+
+    lda counter
+    sta value                           ; get lower part of counter and store in lower part of value 
+    lda counter + 1 
+    sta value + 1                       ; get upper part of counter and store in upper part of value 
+
+divide: 
+    lda #0                              ; clear modulus variable 
+    sta mod10 
+    sta mod10 + 1 
+    clc                                 ; clear carry flag 
+    ldx #16                             ; set x with iteration count 
+
+divloop: 
+    rol value                           ; rotate values in value and mod10
+    rol value + 1 
+    rol mod10 
+    rol mod10 + 1
+
+    sec                                 ; set carry flag 
+    lda mod10 
+    sbc #$10                            ; subtract 10 from the lower part of mode10
+    tay                                 ; move accumulator into register y 
+    lda mod10 + 1                       ; put the upper part of mod10 into the accumulator 
+    sbc #0                              ; subtract 0 from the upper part of mod10
+    bcc ignore_result 
+    sty mod10                           ; if carry flag still set then mod10 divides by ten
+    sta mod10 + 1                       ; store the result in Y & A 
+ignore_result:
+    dex                                 ; decrement loop counter 
+    bne divloop                         
+    rol value                           ; final rotate to compete this cycle
+    rol value + 1
+
+    lda mod10                           ; get the remainder 
+    clc                                 ; clear the carry flag 
+
+    adc #'0'                            ; add 0 to the accumulator to get character code 
+    jsr push_char 
+
+    lda value 
+    ora value + 1                       ; if any bits are set then we are not finished 
+    bne divide 
+
+    ldx #0                              ; set offset value 
+print: 
+    lda message, x                      ; get the charactor at offset x 
+    beq loop                            ; null terminator, jump back to start 
+    jsr display_print 
+    inx                                 ; increment offset
+    jmp print 
+
+push_char: 
+    ; push char adds new character to the front of string 
+    ; moving all other characters to the right.
+    pha                                 ; accumulator contains character to insert 
+    ldy #0
+char_loop:
+    ; this swaps the character on the stack with the one at message, y 
+    lda message, y                      ; get the first character in message 
+    tax                                 ; transfer to x register 
+    pla                                 ; get character back from stack 
+    sta message, y                      ; put character into the message 
+    iny 
+    txa 
+    pha                                 ; push character onto stack 
+    bne char_loop                       ; keeping going until we see the null terminator 
+    pla                                 ; pull the null back from the stack
+    sta message, y                      ; and add to the end of the string 
+    rts 
+
+display_print: 
+    pha                                 ; push accumulator to stack 
+    jsr display_wait                    ; wait for display to be ready 
+    sta via_port_b                      ; send character to port b 
+
+    lda #disp_rs                        ; set rs to inform the display we are sending a character
+    sta via_port_a          
+
+    lda #(disp_rs | disp_enable)        ; set enable to allow display to read char on port b 
+    sta via_port_a 
+
+    lda #0                              ; done, clear the flags on port a 
+    sta via_port_a 
+
+    pla                                 ; restore accumulator 
+    rts 
 
 
-    LDX #0 
-PRINT:
-    LDA message, x 
-    BEQ LOOP 
-    JSR DISPLAY_PRINT 
-    INX 
-    JMP PRINT 
+display_command:
+    ; takes value from the accumulator 
+    ; and loads the value into the display 
+    ; module as a configuration command 
 
-number: .word 1729
+    pha                                 ; push a to the stack so the fuction is non destructive
+    jsr display_wait                    ; wait until the display is ready to accept a command 
 
-PUSH_CHAR:
-    PHA 
-    LDY #0 
+    sta via_port_b                      ; move the command onto port b 
 
-CHAR_LOOP:
-    LDA message, y 
-    TAX 
-    PLA 
-    STA message, y 
-    INY 
-    TXA 
-    PHA 
-    BNE CHAR_LOOP
-    PLA 
-    STA message, y
+    lda #0                              ; clear the display command flags 
+    sta via_port_a 
 
-    RTS 
-DISPLAY_COMMAND:
-    PHA				                ; Push Accum onto the stack 
-    JSR DISPLAY_WAIT                ; Wait for display to be ready
-    STA VIA_PORT_B                  ; Load the command into port B 
+    lda #disp_enable                    ; set the enable flag, allowing display to read value in port b 
+    sta via_port_a      
 
-    LDA #0   
-    STA VIA_PORT_A                  ; Clear port A to prepare for next command
+    lda #0                              ; remove the enable flag. 
+    sta via_port_a 
 
-    LDA #DISP_EN                    ; Set Display Enable
-    STA VIA_PORT_A                  ; Send command in port B to display
+    pla                                 ; pull accumulator back from the stack before returning
+    rts 
 
-    LDA #0                          ; Clear accumulator
-    STA VIA_PORT_A                  ; Clear port A again
-    PLA				                ; Pop the stack back to the Accum
-    RTS
+display_wait: 
+    pha                                 ; push accumulator on to the stack 
+    lda #0                              ; set port b pins as input 
+    sta via_port_b                      ; this enables reading the display status 
 
-DISPLAY_PRINT:
-    PHA 			                ; Push Accum onto the stack
-    JSR DISPLAY_WAIT                ; Wait for display to be ready
-    STA VIA_PORT_B                  ; Load character into port B
+display_busy: 
+    lda #disp_rw                        ; set the display for read mode 
+    sta via_port_a 
 
-    LDA #DISP_RS                    ; Set Register Select for data
-    STA VIA_PORT_A      
+    lda #(disp_rw | disp_enable)        ; add the enable flag to start the read 
+    sta via_port_a          
 
-    LDA #(DISP_RS | DISP_EN)        ; Set Display Enable
-    STA VIA_PORT_A                  ; Send character in port B to display
+    lda via_port_b                      ; transfer the display status into accumulator 
+    and #80                             ; msb contains ready flag.
+    bne display_busy 
 
-    LDA #0
-    STA VIA_PORT_A                  ; Clear port A again
-    PLA 			                ; Pop the stack back to the Accum
-    RTS
+    lda #0                              ; set the display back to write mode 
+    sta via_port_a 
 
-DISPLAY_WAIT: 
-    PHA                             ; Push Accum onto the stack
-    LDA #$0 
-    STA VIA_DDR_B                   ; Set Port B as input to wait for display ready       
+    lda #$FF                            ; set port b pins back to output
+    sta via_ddr_b 
 
-DISPLAY_BUSY:
-    LDA #DISP_RW 
-    STA VIA_PORT_A                  ; Set Read/Write to read mode
-    LDA #(DISP_RW | DISP_EN)          
-    STA VIA_PORT_A                  ; Enable display for reading
-    LDA VIA_PORT_B                  ; Read from Port B (wait for display to be ready)
-    AND #$80                        ; Check if the display is busy, MSB is busy flag, 
-                                    ; all others are the display address counter
-    BNE DISPLAY_BUSY                ; If busy, loop back to check again 
+    pla                                 ; restore accumulator from the stack 
+    rts 
 
-    LDA #0 
-    STA VIA_PORT_A                  ; Clear port A after reading
-    LDA #$FF 
-    STA VIA_DDR_B                   ; Set Port B back to output 
-    PLA                             ; Pop the stack back to the Accum
-    RTS 
-
-NMI: 
-IRQ: 
-    INC counter 
-    BNE EXIT_IRQ 
-    INC counter + 1
-EXIT_IRQ:
-    RTI
-
+nmi:
+irq:
+    inc counter                         ; increment counter by 1
+    bne exit_interupt                   ; if counter > 0 then ignore next line 
+    inc counter + 1                     ; counter rolled back to 0 so increment counter+1
+exit_interupt:
+    bit via_port_a                      ; acknowledge interupt 
+    rti 
 
 .segment "VEC"
-.word NMI                           ; Interrupt vector
-.word ROM_START                     ; Reset vector
-.word IRQ                           ; Interrupt vector
+.word nmi                               ; non maskable interupt
+.word rom                               ; program start 
+.word irq                               ; interupt

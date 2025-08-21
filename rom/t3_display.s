@@ -11,25 +11,6 @@ DISP_EN    = $80                    ; Display Enable bit
 DISP_RW    = $40                    ; Read/Write bit
 DISP_RS    = $20                    ; Register Select bit
 
-; to run in 4 bit mode the via and the display unit 
-; must be connected as such 
-;
-; display           via
-; d4                pb0 
-; d5                pb1
-; d6                pb2
-; d7                pb3
-; RS                pb4
-; RW                pb5
-; E                 pb7 
-;
-;
-; d0 - d3 on display are not used. 
-; pb8 - is not used. 
-
-
-
-
 ROM_START:
     LDX #$FF                        ; Set the stack pointer first load X with $FF
     TXS                             ; Transfer X to the stack pointer

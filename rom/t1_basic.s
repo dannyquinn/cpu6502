@@ -8,7 +8,7 @@
 .segment "ROM"
 
 ROM_START:
-    LDA #$FF        ; Load accumulator with $FF
+    LDA #$FF         ; Load accumulator with $FF
     STA $6002       ; Set all data bits on port B to output 
 
     LDA #$01        ; Load 1 into the accumulator 

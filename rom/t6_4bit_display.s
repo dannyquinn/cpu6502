@@ -12,6 +12,22 @@ disp_enable         = $40
 disp_rw             = $20
 disp_rs             = $10
 
+; to run in 4 bit mode the via and the display unit 
+; must be connected as such 
+;
+; display           via
+; d4                pb0 
+; d5                pb1
+; d6                pb2
+; d7                pb3
+; RS                pb4
+; RW                pb5
+; E                 pb7 
+;
+;
+; d0 - d3 on display are not used. 
+; pb8 - is not used. 
+
 rom: 
     ldx #$ff                ; set stack top
     txs 
@@ -36,7 +52,7 @@ rom:
     ldx #0 
 print:
     lda message, x 
-    beq loop 
+    beq loop                ; null terminator
     jsr display_print 
     inx 
     jmp print 
@@ -54,24 +70,26 @@ display_init:
     ora #disp_enable        ; set the enable high
     sta via_port_b 
 
-    and $0F                 ; clear control nibble
+    and $0f                 ; clear control nibble
     sta via_port_b 
     rts 
 
 display_command:
     jsr display_wait
-    pha 
+    ; need to send the byte as two nibbles, high 
+    ; the low
+    pha                     ; ABCDEFGH               
     lsr 
     lsr
     lsr
-    lsr                     ; send 4 high bits 
+    lsr                     ; 0000ABCD 
     sta via_port_b 
     ora #disp_enable 
     sta via_port_b 
     eor #disp_enable
     sta via_port_b 
-    pla 
-    and #$0F                ; send low bits 
+    pla                     ; ABCDEFGH
+    and #$0F                ; 0000EFGH 
     sta via_port_b 
     ora #disp_enable
     sta via_port_b 
@@ -93,7 +111,7 @@ display_print:
     eor #disp_enable 
     sta via_port_b 
     pla 
-    and #$0F 
+    and #$0f 
     ora #disp_rs 
     sta via_port_b 
     ora #disp_enable 
@@ -104,7 +122,7 @@ display_print:
 
 display_wait:
     pha 
-    lda #$F0                ; set data nibble to input 
+    lda #$f0                ; set data nibble to input 
     sta via_ddr_b 
 
 display_busy:

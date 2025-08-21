@@ -42,13 +42,16 @@ rom:
     lda #$06                            ; increment cursor, no shift 
     jsr display_command 
 
+    lda #$01                            ; ensure display is cleared
+    jsr display_command 
+
     ; initialise variables 
     lda #0 
     sta counter                         ; set counter (2 bytes) to zero
     sta counter + 1
 
     ; interupts 
-    lda #82                             ; enable CA1 interupt on via 
+    lda #$82                             ; enable CA1 interupt on via 
     sta via_ier 
 
     lda #0                              ; clear peripheral control register 
@@ -83,7 +86,7 @@ divloop:
 
     sec                                 ; set carry flag 
     lda mod10 
-    sbc #$10                            ; subtract 10 from the lower part of mode10
+    sbc #10                             ; subtract 10 from the lower part of mode10
     tay                                 ; move accumulator into register y 
     lda mod10 + 1                       ; put the upper part of mod10 into the accumulator 
     sbc #0                              ; subtract 0 from the upper part of mod10

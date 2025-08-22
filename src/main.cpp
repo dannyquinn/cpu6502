@@ -20,7 +20,7 @@ void setup() {
   pinMode(READ_WRITE, INPUT);
   attachInterrupt(digitalPinToInterrupt(CLOCK), onClock, RISING);
 
-  Serial.begin(57600);
+  Serial.begin(9600);
 }
 
 void loop() {}
@@ -30,12 +30,13 @@ void onClock() {
   unsigned int data =0;
 
   for (int i=0; i < 16; i++) {
+    if (i !=0 && i % 4 == 0) {
+      Serial.print("-");
+    }
     int bit = digitalRead(ADDR[i])?1:0;
     Serial.print(bit);
     addr = (addr << 1) | bit;
-    if (i % 4 == 0) {
-      Serial.print("-");
-    }
+    
   }
   Serial.print(" ");
   for (int i=0;i<8;i++){

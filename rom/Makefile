@@ -1,19 +1,25 @@
-f ?=
+f ?= main.s
 w ?= 0
 
-ifeq ($(wildcard $(f).s),)
-$(error Source file $(f).s does not exist)
+ifeq ($(suffix $(f)),.s)
+	ifeq ($(wildcard $(f)),)
+		$(error Source file $(f) does not exist)
+	endif
+else
+	$(error Source file must end with .s)
 endif
+
+OBJECT_FILE := asm.o
 
 all: a.out hexdump_output write_rom clean
 
-%.o: %.s
+$(OBJECT_FILE): $(f)
 	@echo "Assembling $<"
-	ca65 "$<"
+	ca65 $< -o $@
 
-a.out: $(f).o
+a.out: $(OBJECT_FILE)
 	@echo "Linking $@"
-	ld65 -C mem.cfg "$<"
+	ld65 -C mem.cfg $(OBJECT_FILE) -o a.out
 
 .PHONY: hexdump_output
 hexdump_output: a.out
@@ -32,4 +38,4 @@ default: all
 .PHONY: clean
 clean:
 	@echo "Cleaning up..."
-	rm -f $(f).o a.out
+	rm -f $(OBJECT_FILE) a.out

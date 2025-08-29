@@ -1,4 +1,7 @@
 ; Test display module in 8-bit mode 
+;
+; Prints a simple message to the display.
+
 .setcpu "65C02"
 .segment "ROM"
 ; Constants 

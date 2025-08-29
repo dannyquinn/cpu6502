@@ -11,13 +11,13 @@
 
 #### Make
 
-Execute ca65, ld65 & hexdump 
+**make** - compile, link and display file content 
 
-- make f=\<filename\>       
+**make write** - compile, link and send output to programmer 
 
-Execute ca65, ld65 & minipro
+to target a file other than main.s use... 
 
-- make f=\<filename\> w=1  
+**make write f=tests/1_basic.s**
 
 /rom/tests - contains simple assembly programs that allow each part of the circuitry to be tested as it's being put together.
 

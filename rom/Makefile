@@ -1,41 +1,30 @@
 f ?= main.s
-w ?= 0
-
-ifeq ($(suffix $(f)),.s)
-	ifeq ($(wildcard $(f)),)
-		$(error Source file $(f) does not exist)
-	endif
-else
-	$(error Source file must end with .s)
-endif
 
 OBJECT_FILE := asm.o
+EXECUTABLE := a.out
 
-all: a.out hexdump_output write_rom clean
+.PHONY: all hexdump_output write default
 
-$(OBJECT_FILE): $(f)
-	@echo "Assembling $<"
-	ca65 $< -o $@
+all: $(EXECUTABLE) hexdump_output clean
 
-a.out: $(OBJECT_FILE)
+$(OBJECT_FILE):
+	@echo "Assembling $(f)"
+	ca65 $(f) -o $@
+
+$(EXECUTABLE): $(OBJECT_FILE)
 	@echo "Linking $@"
-	ld65 -C mem.cfg $(OBJECT_FILE) -o a.out
+	ld65 -C mem.cfg $(OBJECT_FILE) -o $(EXECUTABLE)
 
-.PHONY: hexdump_output
-hexdump_output: a.out
+hexdump_output: $(EXECUTABLE)
 	@echo "Generating hexdump..."
-	hexdump -C a.out
+	hexdump -C $(EXECUTABLE)
 
-.PHONY: write_rom
-write_rom: a.out
-ifeq ($(w), 1)
-	@echo "Writing a.out to ROM chip..."
-	minipro -p AT28C256 -w a.out
-endif
+write: $(EXECUTABLE)
+	@echo "Writing $(EXECUTABLE) to ROM chip..."
+	minipro -p AT28C256 -w $(EXECUTABLE)
 
 default: all
 
-.PHONY: clean
 clean:
 	@echo "Cleaning up..."
-	rm -f $(OBJECT_FILE) a.out
+	rm -f $(OBJECT_FILE) $(EXECUTABLE)

@@ -1,3 +1,8 @@
+; Increments a counter each time a button is pressed 
+; 
+; the display module is constantly update with the latest
+; count
+
 .setcpu "65C02"
 .segment "ROM"
 

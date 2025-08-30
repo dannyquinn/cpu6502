@@ -1,30 +1,33 @@
 f ?= main.s
 
-OBJECT_FILE := asm.o
-EXECUTABLE := a.out
+# Extract the filename without its directory path and extension
+BASE_NAME := $(basename $(notdir $(f)))
+
+OBJECT_FILE := $(BASE_NAME).o
+EXECUTABLE := $(BASE_NAME).out
 
 .PHONY: all hexdump_output write default
 
-all: $(EXECUTABLE) hexdump_output clean
+all: $(EXECUTABLE) hexdump_output
 
-$(OBJECT_FILE):
-	@echo "Assembling $(f)"
-	ca65 $(f) -o $@
+$(OBJECT_FILE): $(f)
+	@echo "Assembling $<"
+	ca65 $< -o $@
 
 $(EXECUTABLE): $(OBJECT_FILE)
 	@echo "Linking $@"
-	ld65 -C mem.cfg $(OBJECT_FILE) -o $(EXECUTABLE)
+	ld65 -C mem.cfg $< -o $@
 
 hexdump_output: $(EXECUTABLE)
 	@echo "Generating hexdump..."
-	hexdump -C $(EXECUTABLE)
+	hexdump -C $<
 
 write: $(EXECUTABLE)
-	@echo "Writing $(EXECUTABLE) to ROM chip..."
-	minipro -p AT28C256 -w $(EXECUTABLE)
+	@echo "Writing $< to ROM chip..."
+	minipro -p AT28C256 -w $<
 
 default: all
 
 clean:
 	@echo "Cleaning up..."
-	rm -f $(OBJECT_FILE) $(EXECUTABLE)
+	rm -f *.o *.out

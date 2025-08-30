@@ -165,7 +165,7 @@ display_command:
 display_wait: 
     pha 
     lda #0                                  ; set port b pins as input 
-    sta port_b 
+    sta ddr_b 
 
 display_busy:
     lda #disp_rw                            ; set display for read mode 

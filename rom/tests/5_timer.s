@@ -40,8 +40,6 @@ rom:
 
     jsr init_timer              ; initialise the timer
 
-
-
 loop:
     jsr update                  
     jmp loop
@@ -51,7 +49,7 @@ update:
     sec
     lda ticks                   ; get the low bytes of ticks 
     sbc ticks_threshold         ; subtract the ticks threshold
-    cmp #100                     ; elaped >=250ms 
+    cmp #25                     ; elaped >=250ms 
     bcc exit_update             ; nothing to do 
     lda #$01
     eor io_porta                ; flip lsb of porta

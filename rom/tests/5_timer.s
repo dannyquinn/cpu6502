@@ -25,8 +25,8 @@ disp_rw             = $40       ; read/write bit
 disp_rs             = $20       ; register select bit
 
 ; Variables 
-ticks               = $0200       ; 4 bytes 
-ticks_threshold     = $0204       ; 1 byte
+ticks               = $0200     ; 4 bytes 
+ticks_threshold     = $0204     ; 1 byte
 
 rom:
     ldx #$ff                    ; set stack top
@@ -43,7 +43,6 @@ rom:
 loop:
     jsr update                  
     jmp loop
-
 
 update:
     sec

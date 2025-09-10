@@ -27,6 +27,9 @@ to target a file other than main.s use...
 
 Used to view the contents of the data & address buses along with the cpu r/w flag on each clock pulse.
 
+### RS232 
+
+minicom -b 9600 -D /dev/ttyUSB0 
 
 ### Links 
 

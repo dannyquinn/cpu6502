@@ -1,6 +1,5 @@
-; Test RS232 -> MAX232 chip 
+; Test RS232 -> MAX232 -> ACIA chip 
 ;
-; receive only
 
 .setcpu "65C02"
 .segment "ROM"
@@ -42,71 +41,23 @@ rom:
     lda #$01                    ; clear display 
     jsr display_command 
 
-    lda #1 
-    sta io_porta 
-    lda #'*'
-    sta $0200 
-
-    lda #$01 
-    trb io_porta 
-
-    ldx #8 
-write_bit:
-    jsr bit_delay 
-    ror $0200 
-    bcs send_1 
-    trb io_porta
-    jmp tx_done 
-send_1:
-    tsb io_porta 
-tx_done:
-    dex 
-    bne write_bit 
-    jsr bit_delay
-    tsb io_porta
-    jsr bit_delay
+    lda #$00 
+    sta acia_status 
+    lda #$1f                    ; N-8-1 19200 
+    sta acia_ctl 
+    lda #$0b                    ; no parity, no echo, no interupts
+    sta acia_cmd
 
 rx_wait:
-    bit io_porta 
-    bvs rx_wait 
+    lda acia_status
+    and #$08 
+    beq rx_wait 
 
-    jsr half_bit_delay 
-
-    ldx #8 
-read_bit:
-    jsr bit_delay 
-    bit io_porta 
-    bvs recv_1 
-    clc 
-    jmp rx_done 
-recv_1: 
-    sec 
-rx_done: 
-    ror 
-    dex 
-    bne read_bit 
+    lda acia_data 
     jsr display_print 
-    jmp rx_wait 
+    jmp rx_wait
 
-bit_delay: 
-    phx 
-    ldx #13 
-bit_delay_1:
-    dex 
-    bne bit_delay_1
 
-    plx 
-    rts 
-
-half_bit_delay: 
-    phx 
-    ldx #6
-half_bit_delay_1:
-    dex 
-    bne half_bit_delay_1
-
-    plx 
-    rts 
 
 display_wait: 
     pha 

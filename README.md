@@ -29,7 +29,11 @@ Used to view the contents of the data & address buses along with the cpu r/w fla
 
 ### RS232 
 
-minicom -b 9600 -D /dev/ttyUSB0 
+minicom -b 19200 -D /dev/ttyUSB0 
+
+or 
+
+screen /dev/ttyUSB0 19200
 
 ### Links 
 

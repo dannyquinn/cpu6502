@@ -2,6 +2,7 @@
 
 #define CLOCK 2
 #define READ_WRITE 3
+#define SYNC 4
 
 const unsigned int ADDR[] = {22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,52};
 const unsigned int DATA[] = {39,41,43,45,47,49,51,53};
@@ -18,6 +19,7 @@ void setup() {
   }
   pinMode(CLOCK, INPUT); 
   pinMode(READ_WRITE, INPUT);
+  pinMode(SYNC, INPUT);
   attachInterrupt(digitalPinToInterrupt(CLOCK), onClock, RISING);
 
   Serial.begin(9600);
@@ -45,8 +47,10 @@ void onClock() {
     data = (data << 1) | bit;
   }
   char readWrite = digitalRead(READ_WRITE) ? 'r' : 'W';
+  
+  char opCode = digitalRead(SYNC) ? 'O': '_';
 
-  char output[15]; 
-  sprintf(output, " %04x %c %02x", addr, readWrite, data);
+  char output[17]; 
+  sprintf(output, " %04x %c %c %02x", addr, readWrite, opCode, data);
   Serial.println(output);
 }

@@ -1,28 +1,24 @@
-; Test display module in 8-bit mode 
-;
-; Prints a simple message to the display.
-
 .setcpu "65C02"
 .segment "ROM"
-; Constants 
-port_b          = $8000
-port_a          = $8001
-ddr_b           = $8002
-ddr_a           = $8003
 
-disp_en         = $80
-disp_rw         = $40
-disp_rs         = $20
+IO_PORTB            = $8000
+IO_PORTA            = $8001
+IO_DDRB             = $8002
+IO_DDRA             = $8003
+
+DISP_EN             = $80
+DISP_RW             = $40
+DISP_RS             = $20
 
 rom:
     ldx #$ff                ; set the stack pointer 
     txs 
 
     lda #$ff                ; set all data bits on port b to output
-    sta ddr_b 
+    sta IO_DDRB 
 
     lda #$e0                ; set top 3 bits on port a to output 
-    sta ddr_a 
+    sta IO_DDRA 
 
     lda #$38                ; Initialise display 
     jsr display_command 
@@ -50,54 +46,54 @@ loop:
 display_command:
     pha 
     jsr display_wait
-    sta port_b                              ; push command to port b 
+    sta IO_PORTB            ; push command to port b 
     lda #0
-    sta port_a 
-    ora #disp_en                            ; send the command 
-    sta port_a 
-    eor #disp_en   
-    sta port_a                              ; turn enable back off 
+    sta IO_PORTA
+    ora #DISP_EN            ; send the command 
+    sta IO_PORTA 
+    eor #DISP_EN   
+    sta IO_PORTA            ; turn enable back off 
     pla 
     rts 
 
 display_print:
-    pha                                     ; push accumulator to stack
-    jsr display_wait                        ; wait for display to be ready 
-    sta port_b                              ; send char to port b
+    pha                     ; push accumulator to stack
+    jsr display_wait        ; wait for display to be ready 
+    sta IO_PORTB            ; send char to port b
     
-    lda #disp_rs                            ; set rs for char mode 
-    sta port_a 
+    lda #DISP_RS            ; set rs for char mode 
+    sta IO_PORTA
 
-    ora #disp_en                            ; send the character 
-    sta port_a
+    ora #DISP_EN            ; send the character 
+    sta IO_PORTA
 
-    lda #0                                  ; turn enable back off 
-    sta port_a 
+    lda #0                  ; turn enable back off 
+    sta IO_PORTA 
 
     pla 
     rts 
 
 display_wait: 
     pha 
-    lda #0                                  ; set port b pins as input 
-    sta ddr_b 
+    lda #0                  ; set port b pins as input 
+    sta IO_DDRB
 
 display_busy:
-    lda #disp_rw                            ; set display for read mode 
-    sta port_a 
+    lda #DISP_RW            ; set display for read mode 
+    sta IO_PORTA 
 
-    ora #disp_en                            ; send the read command 
-    sta port_a 
+    ora #DISP_EN            ; send the read command 
+    sta IO_PORTA 
 
-    lda port_b 
-    and #$80                                ; check busy flag 
+    lda IO_PORTB
+    and #$80                ; check busy flag 
     bne display_busy 
 
-    lda #0                                  ; set back to write mode 
-    sta port_a 
+    lda #0                  ; set back to write mode 
+    sta IO_PORTA 
 
-    lda #$ff                                ; set port b pins back to output 
-    sta ddr_b 
+    lda #$ff                ; set port b pins back to output 
+    sta IO_DDRB 
 
     pla 
     rts 
@@ -108,5 +104,3 @@ message: .asciiz "Danny's Computer"
 .word $0000
 .word rom 
 .word $0000
-
-

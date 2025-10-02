@@ -1,27 +1,12 @@
-; Test running the display module in 4 bit mode 
-;
-; I was not expecting this to work, in early tests
-; the display would get itself in a bad state and 
-; not initialise properly. 
-; 
-; I have not been able to reproduce this, the screen 
-; works perfectly, regardless of how many times I 
-; reset the cpu. 
-;
-; Might revisit, if the problem comes back later.
-
 .setcpu "65C02"
 .segment "ROM"
 
-
-; IO Addresses 
-
-io_portb            = $8000     ; 8 bit bi directional port 
-io_ddrb             = $8002     ; portb direction register
+IO_PORTB            = $8000     ; 8 bit bi directional port 
+IO_DDRB             = $8002     ; portb direction register
 ; Display control flags 
-disp_en             = $40       ; display enable bit
-disp_rw             = $20       ; read/write bit
-disp_rs             = $10       ; register select bit
+DISP_EN             = $40       ; display enable bit
+DISP_RW             = $20       ; read/write bit
+DISP_RS             = $10       ; register select bit
 
 rom:
     ldx #$ff                    ; set stack top
@@ -41,7 +26,7 @@ rom:
     ; e                     pb6
 
     lda #$ff                    ; Port B output 
-    sta io_ddrb 
+    sta IO_DDRB 
 
     jsr init_display            ; initialise the display 
 
@@ -72,13 +57,13 @@ message: .asciiz "4 Bit Test"
 
 init_display: 
     lda #$02                    ; four bit mode 
-    sta io_portb 
+    sta IO_PORTB 
 
-    ora #disp_en                ; send the command 
-    sta io_portb 
+    ora #DISP_EN                ; send the command 
+    sta IO_PORTB 
 
     and $0f                     ; turn off the enable
-    sta io_portb
+    sta IO_PORTB
 
     rts
 
@@ -89,18 +74,18 @@ display_command:
     lsr
     lsr
     lsr
-    sta io_portb 
-    ora #disp_en 
-    sta io_portb 
-    eor #disp_en 
-    sta io_portb 
+    sta IO_PORTB 
+    ora #DISP_EN 
+    sta IO_PORTB 
+    eor #DISP_EN 
+    sta IO_PORTB 
     pla 
     and #$0f 
-    sta io_portb 
-    ora #disp_en 
-    sta io_portb 
-    eor #disp_en 
-    sta io_portb
+    sta IO_PORTB 
+    ora #DISP_EN 
+    sta IO_PORTB 
+    eor #DISP_EN 
+    sta IO_PORTB
     rts 
 
 display_print: 
@@ -110,46 +95,46 @@ display_print:
     lsr
     lsr
     lsr
-    ora #disp_rs 
-    sta io_portb 
-    ora #disp_en 
-    sta io_portb 
-    eor #disp_en 
-    sta io_portb 
+    ora #DISP_RS 
+    sta IO_PORTB 
+    ora #DISP_EN 
+    sta IO_PORTB 
+    eor #DISP_EN 
+    sta IO_PORTB 
     pla 
     and #$0f 
-    ora #disp_rs 
-    sta io_portb 
-    ora #disp_en 
-    sta io_portb 
-    eor #disp_en 
-    sta io_portb 
+    ora #DISP_RS 
+    sta IO_PORTB 
+    ora #DISP_EN 
+    sta IO_PORTB 
+    eor #DISP_EN 
+    sta IO_PORTB 
     rts
 
 display_wait: 
     pha 
     lda #$f0
-    sta io_ddrb 
+    sta IO_DDRB
 
 display_busy:
-    lda #disp_rw 
-    sta io_portb 
-    ora #disp_en 
-    sta io_portb 
-    lda io_portb 
+    lda #DISP_RW 
+    sta IO_PORTB 
+    ora #DISP_EN 
+    sta IO_PORTB 
+    lda IO_PORTB 
     pha 
-    lda #disp_rw 
-    sta io_portb 
-    ora #disp_en 
-    sta io_portb 
-    lda io_portb 
+    lda #DISP_RW 
+    sta IO_PORTB 
+    ora #DISP_EN 
+    sta IO_PORTB 
+    lda IO_PORTB 
     pla 
     and #$08 
     bne display_busy 
-    lda #disp_rw 
-    sta io_portb 
+    lda #DISP_RW 
+    sta IO_PORTB 
     lda #$ff 
-    sta io_ddrb 
+    sta IO_DDRB
     pla 
     rts 
 

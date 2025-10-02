@@ -7,18 +7,18 @@
 .segment "ROM"
 
 ; IO Addresses 
-port_b                  = $8000             ; 8 bit in/out port b 
-port_a                  = $8001             ; 8 bit in/out port a
-ddr_b                   = $8002             ; port b data direction register 
-ddr_a                   = $8003             ; port a data direction register
-pcr                     = $800c             ; peripheral control register
-ifr                     = $800d             ; interupt flags register
-ier                     = $800e             ; interupt enable register
+IO_PORTB                = $8000             ; 8 bit in/out port b 
+IO_PORTA                = $8001             ; 8 bit in/out port a
+IO_DDRB                 = $8002             ; port b data direction register 
+IO_DDRA                 = $8003             ; port a data direction register
+IO_PCR                  = $800c             ; peripheral control register
+IO_IFR                  = $800d             ; interupt flags register
+IO_IER                  = $800e             ; interupt enable register
 
 ; Display control flags 
-disp_en                 = $80               ; display enable bit
-disp_rw                 = $40               ; read/write bit 
-disp_rs                 = $20               ; register select 
+DISP_EN                 = $80               ; display enable bit
+DISP_RW                 = $40               ; read/write bit 
+DISP_RS                 = $20               ; register select 
 
 ; Variables 
 value                   = $0200             ; 2 bytes 
@@ -31,10 +31,10 @@ rom:
     txs 
 
     lda #$ff                                ; set output on port b
-    sta ddr_b 
+    sta IO_DDRB 
 
     lda #$e0                                ; set top 3 output on port a
-    sta ddr_a
+    sta IO_DDRA
 
     lda #$38                                ; init display module 
     jsr display_command 
@@ -53,10 +53,10 @@ rom:
     sta counter + 1
 
     lda #$82                                ; enable ca 1 interupt 
-    sta ier 
+    sta IO_IER 
 
     lda #0                                  ; clear peripheral control register 
-    sta pcr
+    sta IO_PCR
 
     cli                                     ; enable processor interupt
 
@@ -135,16 +135,16 @@ char_loop:
 display_print:
     pha                                     ; push accumulator to stack
     jsr display_wait                        ; wait for display to be ready 
-    sta port_b                              ; send char to port b
+    sta IO_PORTB                            ; send char to port b
     
-    lda #disp_rs                            ; set rs for char mode 
-    sta port_a 
+    lda #DISP_RS                            ; set rs for char mode 
+    sta IO_PORTA
 
-    ora #disp_en                            ; send the character 
-    sta port_a
+    ora #DISP_EN                            ; send the character 
+    sta IO_PORTA
 
     lda #0                                  ; turn enable back off 
-    sta port_a 
+    sta IO_PORTA
 
     pla 
     rts 
@@ -152,37 +152,37 @@ display_print:
 display_command:
     pha 
     jsr display_wait
-    sta port_b                              ; push command to port b 
+    sta IO_PORTB                            ; push command to port b 
     lda #0
-    sta port_a 
-    ora #disp_en                            ; send the command 
-    sta port_a 
-    eor #disp_en   
-    sta port_a                              ; turn enable back off 
+    sta IO_PORTA
+    ora #DISP_EN                            ; send the command 
+    sta IO_PORTA 
+    eor #DISP_EN   
+    sta IO_PORTA                            ; turn enable back off 
     pla 
     rts 
 
 display_wait: 
     pha 
     lda #0                                  ; set port b pins as input 
-    sta ddr_b 
+    sta IO_DDRB
 
 display_busy:
-    lda #disp_rw                            ; set display for read mode 
-    sta port_a 
+    lda #DISP_RW                            ; set display for read mode 
+    sta IO_PORTA
 
-    ora #disp_en                            ; send the read command 
-    sta port_a 
+    ora #DISP_EN                            ; send the read command 
+    sta IO_PORTA
 
-    lda port_b 
+    lda IO_PORTB
     and #$80                                ; check busy flag 
     bne display_busy 
 
     lda #0                                  ; set back to write mode 
-    sta port_a 
+    sta IO_PORTA
 
     lda #$ff                                ; set port b pins back to output 
-    sta ddr_b 
+    sta IO_DDRB
 
     pla 
     rts 
@@ -193,7 +193,7 @@ irq:
     bne exit_interupt 
     inc counter + 1
 exit_interupt:
-    bit port_a                              ; acknowledge interupt 
+    bit IO_PORTA                            ; acknowledge interupt 
     rti 
 
 .segment "VEC"

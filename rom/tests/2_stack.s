@@ -1,15 +1,12 @@
-; 6502 Stack test program 
-; This is pretty much the same test as 1_basic.s 
-; however it introduces a subroutine and therefore
-; requires the ram chip to be installed correctly.
-; (stack uses the ram chip)
-
 .setcpu "65C02"
 .segment "ROM"
 
+IO_PORTB                = $8000
+IO_DDRB                 = $8002
+
 rom:
     lda #$ff 
-    sta $8002 
+    sta IO_DDRB
 
     lda #$01
 
@@ -19,7 +16,7 @@ loop:
     jmp loop 
 
 send_to_port:
-    sta $8000
+    sta IO_PORTB
     rts 
 
 .segment "VEC"

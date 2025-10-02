@@ -1,28 +1,24 @@
-; Tests creating a continuous timer of 10ms 
-; and then using that timer to blink an led 
-; connects to pin 1 or port b, every second
-
 .setcpu "65C02"
 .segment "ROM"
 
 ; IO Addresses 
 
-io_portb            = $8000     ; 8 bit bi directional port 
-io_porta            = $8001     ; 8 bit bi directional port
-io_ddrb             = $8002     ; portb direction register
-io_ddra             = $8003     ; porta direction register
-io_t1_low           = $8004     ; timer 1 low 
-io_t1_high          = $8005     ; timer 1 high
-io_acr              = $800b     ; aux register control
-io_pcr              = $800c     ; peripheral control register
-io_ifr              = $800d     ; interupt flags register
-io_ier              = $800e     ; interupt enable register
+IO_PORTB            = $8000     ; 8 bit bi directional port 
+IO_PORTA            = $8001     ; 8 bit bi directional port
+IO_DDRB             = $8002     ; portb direction register
+IO_DDRA             = $8003     ; porta direction register
+IO_T1_LOW           = $8004     ; timer 1 low 
+IO_T1_HIGH          = $8005     ; timer 1 high
+IO_ACR              = $800b     ; aux register control
+IO_PCR              = $800c     ; peripheral control register
+IO_IFR              = $800d     ; interupt flags register
+IO_IER              = $800e     ; interupt enable register
 
 
 ; Display control flags 
-disp_en             = $80       ; display enable bit
-disp_rw             = $40       ; read/write bit
-disp_rs             = $20       ; register select bit
+DIST_EN             = $80       ; display enable bit
+DISP_RW             = $40       ; read/write bit
+DIST_RS             = $20       ; register select bit
 
 ; Variables 
 ticks               = $0200     ; 4 bytes 
@@ -33,7 +29,7 @@ rom:
     txs
 
     lda #01                     ; set lsb of port a to output
-    sta io_ddra 
+    sta IO_DDRA 
 
     lda #0                      ; reset toggle_threshold
     sta ticks_threshold 
@@ -51,8 +47,8 @@ update:
     cmp #25                     ; elaped >=250ms 
     bcc exit_update             ; nothing to do 
     lda #$01
-    eor io_porta                ; flip lsb of porta
-    sta io_porta 
+    eor IO_PORTA                ; flip lsb of porta
+    sta IO_PORTA 
     lda ticks 
     sta ticks_threshold 
 exit_update:
@@ -68,15 +64,15 @@ init_timer:
     sta ticks + 3 
 
     lda #$40                    ; set timer to continuous interupt 
-    sta io_acr 
+    sta IO_ACR
 
     lda #$c0                    ; enable timer 1 interupts 
-    sta io_ier
+    sta IO_IER
 
     lda #$0e                    ; set timer to 10ms 
-    sta io_t1_low 
+    sta IO_T1_LOW 
     lda #$27                    
-    sta io_t1_high              ; timer starts once this instruction completes 
+    sta IO_T1_HIGH              ; timer starts once this instruction completes 
     rts
 
 nmi:
@@ -90,7 +86,7 @@ irq:
     bne end_irq 
     inc ticks + 3 
 end_irq:
-    bit io_t1_low               ; reset the interupt
+    bit IO_T1_LOW              ; reset the interupt
     rti
 
 .segment "VEC"

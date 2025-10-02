@@ -3,16 +3,16 @@
 display_init:
     pha 
     lda #$ff 
-    sta io_ddrb 
+    sta IO_DDRB
 
     lda #$02                    ; four bit mode 
-    sta io_portb 
+    sta IO_PORTB 
 
-    ora #disp_en                ; send the command 
-    sta io_portb 
+    ora #DISP_EN                ; send the command 
+    sta IO_PORTB 
 
     and #$0f                    ; turn off the enable
-    sta io_portb
+    sta IO_PORTB
 
     lda #$28                    ; set 4 bit mode, 2 line display, 5x8 font 
     jsr display_command 
@@ -37,11 +37,11 @@ display_command:
     lsr
     lsr
     lsr
-    sta io_portb 
-    ora #disp_en 
-    sta io_portb 
-    eor #disp_en 
-    sta io_portb 
+    sta IO_PORTB 
+    ora #DISP_EN 
+    sta IO_PORTB 
+    eor #DISP_EN 
+    sta IO_PORTB 
     pla 
     and #$0f 
     sta io_portb 

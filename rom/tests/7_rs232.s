@@ -1,22 +1,18 @@
-; Test RS232 -> MAX232 chip 
-;
-; receive only
-
 .setcpu "65C02"
 .segment "ROM"
 
-io_portb            = $8000     ; 8 bit bi directional port 
-io_porta            = $8001     ; 8 bit bi directional port
-io_ddrb             = $8002     ; portb direction register
-io_ddra             = $8003     ; porta direction register
-disp_en             = $40       ; display enable bit
-disp_rw             = $20       ; read/write bit
-disp_rs             = $10       ; register select bit
+IO_PORTB            = $8000     ; 8 bit bi directional port 
+IO_PORTA            = $8001     ; 8 bit bi directional port
+IO_DDRB             = $8002     ; portb direction register
+IO_DDRA             = $8003     ; porta direction register
+DISP_EN             = $40       ; display enable bit
+DISP_RW             = $20       ; read/write bit
+DISP_RS             = $10       ; register select bit
 
-acia_data = $8080
-acia_status = $8081 
-acia_cmd = $8082 
-acia_ctl = $8083 
+ACIA_DATA           = $8080
+ACIA_STATUS         = $8081 
+ACIA_CMD            = $8082 
+ACIA_CTL            = $8083 
 
 rom:
     ldx #$ff 
@@ -24,9 +20,9 @@ rom:
 
     
     lda #$ff
-    sta io_ddrb 
+    sta IO_DDRB
     lda #$bf 
-    sta io_ddra 
+    sta IO_DDRA
 
     jsr init_display            ; initialise the display 
 
@@ -43,31 +39,31 @@ rom:
     jsr display_command 
 
     lda #1 
-    sta io_porta 
+    sta IO_PORTA
     lda #'*'
     sta $0200 
 
     lda #$01 
-    trb io_porta 
+    trb IO_PORTA
 
     ldx #8 
 write_bit:
     jsr bit_delay 
     ror $0200 
     bcs send_1 
-    trb io_porta
+    trb IO_PORTA
     jmp tx_done 
 send_1:
-    tsb io_porta 
+    tsb IO_PORTA
 tx_done:
     dex 
     bne write_bit 
     jsr bit_delay
-    tsb io_porta
+    tsb IO_PORTA
     jsr bit_delay
 
 rx_wait:
-    bit io_porta 
+    bit IO_PORTA
     bvs rx_wait 
 
     jsr half_bit_delay 
@@ -75,7 +71,7 @@ rx_wait:
     ldx #8 
 read_bit:
     jsr bit_delay 
-    bit io_porta 
+    bit IO_PORTA
     bvs recv_1 
     clc 
     jmp rx_done 
@@ -111,27 +107,27 @@ half_bit_delay_1:
 display_wait: 
     pha 
     lda #$f0
-    sta io_ddrb 
+    sta IO_DDRB
 
 display_busy:
-    lda #disp_rw 
-    sta io_portb 
-    ora #disp_en 
-    sta io_portb 
-    lda io_portb 
+    lda #DISP_RW
+    sta IO_PORTB
+    ora #DISP_EN
+    sta IO_PORTB
+    lda IO_PORTB
     pha 
-    lda #disp_rw 
-    sta io_portb 
-    ora #disp_en 
-    sta io_portb 
-    lda io_portb 
+    lda #DISP_RW
+    sta IO_PORTB
+    ora #DISP_EN
+    sta IO_PORTB
+    lda IO_PORTB
     pla 
     and #$08 
     bne display_busy 
-    lda #disp_rw 
-    sta io_portb 
+    lda #DISP_RW 
+    sta IO_PORTB 
     lda #$ff 
-    sta io_ddrb 
+    sta IO_DDRB 
     pla 
     rts 
 
@@ -142,31 +138,31 @@ display_print:
     lsr
     lsr
     lsr
-    ora #disp_rs 
-    sta io_portb 
-    ora #disp_en 
-    sta io_portb 
-    eor #disp_en 
-    sta io_portb 
+    ora #DISP_RS
+    sta IO_PORTB
+    ora #DISP_EN
+    sta IO_PORTB
+    eor #DISP_EN
+    sta IO_PORTB
     pla 
     and #$0f 
-    ora #disp_rs 
-    sta io_portb 
-    ora #disp_en 
-    sta io_portb 
-    eor #disp_en 
-    sta io_portb 
+    ora #DISP_RS
+    sta IO_PORTB
+    ora #DISP_EN
+    sta IO_PORTB
+    eor #DISP_EN
+    sta IO_PORTB 
     rts
 
 init_display: 
     lda #$02                    ; four bit mode 
-    sta io_portb 
+    sta IO_PORTB
 
-    ora #disp_en                ; send the command 
-    sta io_portb 
+    ora #DISP_EN                ; send the command 
+    sta IO_PORTB 
 
     and $0f                     ; turn off the enable
-    sta io_portb
+    sta IO_PORTB
 
     rts
 
@@ -178,18 +174,18 @@ display_command:
     lsr
     lsr
     lsr
-    sta io_portb 
-    ora #disp_en 
-    sta io_portb 
-    eor #disp_en 
-    sta io_portb 
+    sta IO_PORTB
+    ora #DISP_EN
+    sta IO_PORTB
+    eor #DISP_EN
+    sta IO_PORTB
     pla 
     and #$0f 
-    sta io_portb 
-    ora #disp_en 
-    sta io_portb 
-    eor #disp_en 
-    sta io_portb
+    sta IO_PORTB
+    ora #DISP_EN 
+    sta IO_PORTB 
+    eor #DISP_EN 
+    sta IO_PORTB
     rts 
 
 .segment "VEC"

@@ -1,4 +1,5 @@
 .setcpu "65C02"
+.include "constant.s"
 
 xaml        = $24           ; Last "opened" location low 
 xamh        = $25           ; Last "opened" location high
@@ -11,17 +12,12 @@ mode        = $2b           ; $00=XAM, $7F=STOR, $AE=BLOCK XAM
 
 in          = $0200         ; Input buffer 
 
-acia_data   = $8080
-acia_status = $8081
-acia_cmd    = $8082
-acia_ctrl   = $8083
-
 reset:
     lda #$1f                ; 8-N-1, 19200 baud
-    sta acia_ctrl
+    sta ACIA_CONTROL
 
     lda #$0b                ; no parity, no echo, no interupts
-    sta acia_cmd 
+    sta ACIA_COMMAND
 
     lda #$1b                ; begin with escape 
 
@@ -48,10 +44,10 @@ backspace:
     bmi getline             ; beyond start of line, re-init
 
 nextchar:
-    lda acia_status         ; check status 
+    lda ACIA_STATUS         ; check status 
     and #$08                ; key ready?
     beq nextchar            ; loop until ready
-    lda acia_data           ; load character. B7 will be '0'
+    lda ACIA_DATA           ; load character. B7 will be '0'
     sta in, y               ; add to text buffer 
     jsr echo                ; display character 
     cmp #$0d                ; CR ?
@@ -185,7 +181,7 @@ prhex:
 
 echo:
     pha                     ; save a
-    sta acia_data           ; output character 
+    sta ACIA_DATA           ; output character 
     lda #$ff                ; init loop
 txdelay:
     dec                     ; decrement a 

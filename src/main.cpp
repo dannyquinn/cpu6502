@@ -4,8 +4,8 @@
 #define READ_WRITE 3
 #define SYNC 4
 
-const unsigned int ADDR[] = {22,24,26,28,30,32,34,36,38,40,42,44,46,48,50,52};
-const unsigned int DATA[] = {39,41,43,45,47,49,51,53};
+const unsigned int ADDR[] = {39,41,43,45,38,40,42,44,47,49,51,53,46,48,50,52};
+ const unsigned int DATA[] = {22,24,26,28,30,32,34,36};
 
 void onClock(); 
 

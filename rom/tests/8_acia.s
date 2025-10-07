@@ -9,10 +9,10 @@ DISP_EN             = $40       ; display enable bit
 DISP_RW             = $20       ; read/write bit
 DISP_RS             = $10       ; register select bit
 
-ACIA_DATA           = $8080
-ACIA_STATUS         = $8081 
-ACIA_CMD            = $8082 
-ACIA_CTL            = $8083 
+ACIA_DATA           = $8010
+ACIA_STATUS         = $8011 
+ACIA_CMD            = $8012 
+ACIA_CTL            = $8013 
 
 rom:
     ldx #$ff 

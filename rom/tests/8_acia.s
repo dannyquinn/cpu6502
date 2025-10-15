@@ -1,4 +1,5 @@
 .setcpu "65C02"
+
 .segment "ROM"
 
 IO_PORTB            = $8000     ; 8 bit bi directional port 
@@ -14,15 +15,16 @@ ACIA_STATUS         = $8011
 ACIA_CMD            = $8012 
 ACIA_CTL            = $8013 
 
+ptr                 = $00       ; 2 bytes 
+
+
 rom:
-    ldx #$ff 
-    txs 
+    ldx #$ff                    
+    txs                         ; set stack pointer
 
     
     lda #$ff
-    sta IO_DDRB
-    lda #$bf 
-    sta IO_DDRA
+    sta IO_DDRB                 ; set portb pins as output
 
     jsr init_display            ; initialise the display 
 
@@ -38,12 +40,32 @@ rom:
     lda #$01                    ; clear display 
     jsr display_command 
 
+
     lda #$00 
-    sta ACIA_STATUS
-    lda #$1f                    ; N-8-1 19200 
-    sta ACIA_CTL
-    lda #$0b                    ; no parity, no echo, no interupts
-    sta ACIA_CMD
+    sta ACIA_STATUS             ; Initialise the uart
+    lda #$1f                    
+    sta ACIA_CTL                ; N-8-1 19200 
+    lda #$0b                    
+    sta ACIA_CMD                ; no parity, no echo, no interupts
+
+
+    lda #<clearscreen 
+    sta ptr 
+
+    lda #>clearscreen 
+    sta ptr+1
+
+    lda #clearscreenend - clearscreen
+    tax 
+    lda #0 
+    tay 
+
+reset_terminal:                 
+    lda (ptr), y                
+    jsr send_char 
+    iny 
+    dex 
+    bne reset_terminal
 
 rx_wait:
     lda ACIA_STATUS
@@ -51,10 +73,45 @@ rx_wait:
     beq rx_wait 
 
     lda ACIA_DATA
+    cmp #$0D 
+    beq cr                      ; user presses cr
+    jsr send_char
     jsr display_print 
+    
     jmp rx_wait
 
+cr: 
+    lda #$01                    ; clear lcd display 
+    jsr display_command 
 
+    lda #$0D                    ; send cr and lf back
+    jsr send_char
+
+    lda #$0A 
+    jsr send_char 
+    jmp rx_wait
+
+send_char: 
+    pha 
+    sta ACIA_DATA 
+    jsr tx_delay 
+    pla
+    rts 
+
+tx_delay:
+    phx 
+    ldx #100
+tx_delay_1: 
+    dex 
+    bne tx_delay_1 
+    plx 
+    rts 
+
+clearscreen:
+    ; clears connected terminal, moves cursor back to the top and 
+    ; prints ready
+    .byte $1B, $5B, $32, $4A, $1B, $5B, $48, $52, $45, $41, $44, $59, $0D, $0A
+clearscreenend:
 
 display_wait: 
     pha 

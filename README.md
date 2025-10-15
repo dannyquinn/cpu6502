@@ -3,21 +3,39 @@
 /rom
 
 #### Manual Steps
+```
+# Compile 
+ca65 source.s
 
-- ca65 source.s 
-- ld65 -C mem.cfg source.o 
-- hexdump -C a.out 
-- minipro -p AT28C256 -w a.out 
+# Link 
+ld65 -C mem.cfg source.o 
+
+# View content of the output 
+hexdump -C a.out 
+
+# Write to programmer 
+minipro -p AT28C256 -w a.out 
+```
 
 #### Make
 
-**make** - compile, link and display file content 
+```
+# compile, link 
+# & view hexdump
+make 
+```
 
-**make write** - compile, link and send output to programmer 
+``` 
+# compile, link & 
+# write to programmer
+make write
+```
 
 to target a file other than main.s use... 
 
-**make write f=tests/1_basic.s**
+```
+make write f=tests/1_basic.s
+```
 
 /rom/tests - contains simple assembly programs that allow each part of the circuitry to be tested as it's being put together.
 
@@ -29,12 +47,13 @@ Used to view the contents of the data & address buses along with the cpu r/w fla
 
 ### RS232 
 
+```
 minicom -b 19200 -D /dev/ttyUSB0 
-
+```
 or 
-
+```
 screen /dev/ttyUSB0 19200
-
+```
 ### Links 
 
 Assembler / Linker - https://cc65.github.io

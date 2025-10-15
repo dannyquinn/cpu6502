@@ -3,35 +3,41 @@
 /rom
 
 #### Manual Steps
+
+Compile
 ```
-# Compile 
 ca65 source.s
-
-# Link 
+```
+Link 
+```
 ld65 -C mem.cfg source.o 
-
-# View content of the output 
+```
+View content of the output 
+```
 hexdump -C a.out 
-
-# Write to programmer 
+```
+Write to programmer 
+```
 minipro -p AT28C256 -w a.out 
 ```
 
 #### Make
 
+Compile, link & view hexdump
 ```
-# compile, link 
-# & view hexdump
 make 
 ```
-
-``` 
-# compile, link & 
-# write to programmer
+ 
+Compile, link & write to programmer
+```
 make write
 ```
 
 to target a file other than main.s use... 
+
+```
+make f=tests/1_basic.s 
+```
 
 ```
 make write f=tests/1_basic.s

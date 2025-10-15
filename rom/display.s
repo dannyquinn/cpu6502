@@ -1,4 +1,10 @@
 .include "constant.s" 
+.macro sdd 
+    ora #DISP_EN 
+    sta IO_PORTB 
+    eor #DISP_EN 
+    sta IO_PORTB 
+.endmacro
 
 display_init:
     pha 
@@ -38,17 +44,11 @@ display_command:
     lsr
     lsr
     sta IO_PORTB 
-    ora #DISP_EN 
-    sta IO_PORTB 
-    eor #DISP_EN 
-    sta IO_PORTB 
+    sdd  
     pla 
     and #$0f 
-    sta io_portb 
-    ora #disp_en 
-    sta io_portb 
-    eor #disp_en 
-    sta io_portb
+    sta IO_PORTB
+    sdd
     pla
     rts 
 
@@ -60,46 +60,40 @@ display_print:
     lsr
     lsr
     lsr
-    ora #disp_rs 
-    sta io_portb 
-    ora #disp_en 
-    sta io_portb 
-    eor #disp_en 
-    sta io_portb 
+    ora #DISP_RS 
+    sta IO_PORTB
+    sdd 
     pla 
     and #$0f 
-    ora #disp_rs 
-    sta io_portb 
-    ora #disp_en 
-    sta io_portb 
-    eor #disp_en 
-    sta io_portb 
+    ora #DISP_RS 
+    sta IO_PORTB 
+    sdd
     pla
     rts
 
 display_wait: 
     pha 
     lda #$f0
-    sta io_ddrb 
+    sta IO_DDRB 
 
 display_busy:
-    lda #disp_rw 
-    sta io_portb 
-    ora #disp_en 
-    sta io_portb 
-    lda io_portb 
+    lda #DISP_RW
+    sta IO_PORTB 
+    ora #DISP_EN
+    sta IO_PORTB
+    lda IO_PORTB 
     pha 
-    lda #disp_rw 
-    sta io_portb 
-    ora #disp_en 
-    sta io_portb 
-    lda io_portb 
+    lda #DISP_RW 
+    sta IO_PORTB 
+    ora #DISP_EN 
+    sta IO_PORTB 
+    lda IO_PORTB 
     pla 
     and #$08 
     bne display_busy 
-    lda #disp_rw 
-    sta io_portb 
+    lda #DISP_RW 
+    sta IO_PORTB 
     lda #$ff 
-    sta io_ddrb 
+    sta IO_DDRB 
     pla 
     rts 

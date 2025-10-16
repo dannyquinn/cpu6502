@@ -1,5 +1,5 @@
 .setcpu "65C02"
-.segment "ROM"
+.segment "rom"
 
 IO_PORTB                = $8000 
 IO_DDRB                 = $8002
@@ -15,7 +15,7 @@ loop:
     ror 
     jmp loop
 
-.segment "VEC"
+.segment "vec"
 .word $0000 
 .word rom 
 .word $0000

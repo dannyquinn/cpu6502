@@ -1,5 +1,5 @@
 .setcpu "65C02"
-.segment "ROM"
+.segment "rom"
 
 IO_PORTB            = $8000     ; 8 bit bi directional port 
 IO_DDRB             = $8002     ; portb direction register
@@ -138,7 +138,7 @@ display_busy:
     pla 
     rts 
 
-.segment "VEC"
+.segment "vec"
 .word $0000 
 .word rom 
 .word $0000

@@ -1,5 +1,5 @@
 .setcpu "65C02"
-.segment "ROM"
+.segment "rom"
 
 ; IO Addresses 
 
@@ -89,7 +89,7 @@ end_irq:
     bit IO_T1_LOW              ; reset the interupt
     rti
 
-.segment "VEC"
+.segment "vec"
 .word nmi 
 .word rom 
 .word irq

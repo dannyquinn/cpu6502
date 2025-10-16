@@ -4,7 +4,7 @@
 ; count
 
 .setcpu "65C02"
-.segment "ROM"
+.segment "rom"
 
 ; IO Addresses 
 IO_PORTB                = $8000             ; 8 bit in/out port b 
@@ -196,7 +196,7 @@ exit_interupt:
     bit IO_PORTA                            ; acknowledge interupt 
     rti 
 
-.segment "VEC"
+.segment "vec"
 .word nmi 
 .word rom 
 .word irq 

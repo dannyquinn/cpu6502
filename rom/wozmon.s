@@ -1,191 +1,197 @@
 .setcpu "65C02"
 .include "constant.s"
+.segment "woz"
 
-xaml        = $24           ; Last "opened" location low 
-xamh        = $25           ; Last "opened" location high
-stl         = $26           ; Store address low 
-sth         = $27           ; Store address high 
-l           = $28           ; Hex value parsing low 
-h           = $29           ; Hex value parsing high
-ysav        = $2a           ; Used to see if hex value is given 
-mode        = $2b           ; $00=XAM, $7F=STOR, $AE=BLOCK XAM
+xaml  = $24             ; Last "opened" location Low
+xamh  = $25             ; Last "opened" location High
+stl   = $26             ; Store address Low
+sth   = $27             ; Store address High
+l     = $28             ; Hex value parsing Low
+h     = $29             ; Hex value parsing High
+ysav  = $2A             ; Used to see if hex value is given
+mode  = $2B             ; $00=XAM, $7F=STOR, $AE=BLOCK XAM
 
-in          = $0200         ; Input buffer 
+in    = $0200           ; Input buffer
 
-reset:
-    lda #$1f                ; 8-N-1, 19200 baud
+wozman:
+@reset:
+    lda #$1F            ; 8-N-1, 19200 baud.
     sta ACIA_CONTROL
-
-    lda #$0b                ; no parity, no echo, no interupts
+    lda #$0B            ; No parity, no echo, no interrupts.
     sta ACIA_COMMAND
+    lda #$1B            ; Begin with escape.
 
-    lda #$1b                ; begin with escape 
+@notcr:
+    cmp #$08            ; Backspace key?
+    beq @backspace      ; Yes.
+    cmp #$1b            ; ESC?
+    beq @escape         ; Yes.
+    iny                 ; Advance text index.
+    bpl @nextchar       ; Auto ESC if line longer than 127.
 
-notcr:
-    cmp #$08                ; Backspace key
-    beq backspace
-    cmp #$1b                ; Escape?
-    beq escape 
-    iny                     ; advance text index 
-    bpl nextchar            ; auto esc if line longer than 127
+@escape:
+    lda #$5c            ; "\".
+    jsr @echo           ; Output it.
 
-escape:
-    lda #$5c                ; "\"
-    jsr echo 
+@getline:
+    lda #$0d            ; Send CR
+    jsr @echo
 
-getline:
-    lda #$0d                ; send cr 
-    jsr echo
+    ldy #$01            ; Initialize text index.
+@backspace:      
+    dey                 ; Back up text index.
+    bmi @getline        ; Beyond start of line, reinitialize.
 
-    ldy #$01                ; initialise text index 
+@nextchar:
+    lda ACIA_STATUS     ; Check status.
+    and #$08            ; Key ready?
+    beq @nextchar       ; Loop until ready.
+    lda ACIA_DATA       ; Load character. B7 will be '0'.
+    sta in,y            ; Add to text buffer.
+    jsr @echo           ; Display character.
+    cmp #$0D            ; CR?
+    bne @notcr          ; No.
 
-backspace:
-    dey                     ; back up text index 
-    bmi getline             ; beyond start of line, re-init
-
-nextchar:
-    lda ACIA_STATUS         ; check status 
-    and #$08                ; key ready?
-    beq nextchar            ; loop until ready
-    lda ACIA_DATA           ; load character. B7 will be '0'
-    sta in, y               ; add to text buffer 
-    jsr echo                ; display character 
-    cmp #$0d                ; CR ?
-    bne notcr               ; no.
-
-    ldy #$ff                ; reset text index 
-    lda #$00                ; for xam mode 
-    tax                     ; x=0
-
-setblock:
+    ldy #$ff            ; Reset text index.
+    lda #$00            ; For XAM mode.
+    tax                 ; X=0.
+@setblok:
     asl
-setstor:
+@setstor:
+    asl                 ; Leaves $7B if setting STOR mode.
+    sta mode            ; $00 = XAM, $74 = STOR, $B8 = BLOK XAM.
+@blskip:
+    iny                 ; Advance text index.
+@nextitem:
+    lda in,y            ; Get character.
+    cmp #$0d            ; CR?
+    beq @getline        ; Yes, done this line.
+    cmp #$2e            ; "."?
+    bcc @blskip         ; Skip delimiter.
+    beq @setblok        ; Set BLOCK XAM mode.
+    cmp #$3a            ; ":"?
+    beq @setstor        ; Yes, set STOR mode.
+    cmp #$52            ; "R"?
+    beq @run            ; Yes, run user program.
+    stx l               ; $00 -> L.
+    stx h               ;    and H.
+    sty ysav            ; Save Y for comparison
+
+@nexthex:
+    lda in,y            ; Get character for hex test.
+    eor #$30            ; Map digits to $0-9.
+    cmp #$0a            ; Digit?
+    bcc @dig            ; Yes.
+    adc #$88            ; Map letter "A"-"F" to $FA-FF.
+    cmp #$fa            ; Hex letter?
+    bcc @nothex         ; No, character not hex.
+
+@dig:
     asl
-    sta mode                ; $00=XAM, $74=STOR, $B8 = BLOK XAM 
-blskip:
-    iny                     ; advance text index 
-nextitem:
-    lda in, y               ; get character 
-    cmp #$0d                ; CR ?
-    beq getline             ; yes, done this line 
-    cmp #$2e                ; "."?
-    bcc blskip              ; skip delimiter 
-    beq setblock            ; set block xam mode 
-    cmp #$3a                ; ":"?
-    beq setstor             ; set stor mode 
-    cmp #$52                ; "R"?
-    beq run                 ; run user program 
-    stx l                   ; $00 -> l 
-    stx h                   ; $00 -> h
-    sty ysav                ; save y for comparison 
-
-nexthex:
-    lda in, y               ; get character for hex test 
-    eor #$30                ; map digits to $0-9
-    cmp #$0a                ; digit?
-    bcc dig                 ; yes 
-    adc #$88                ; map letter 'A'-'F' to $FA-FF 
-    cmp #$fa                ; hex letter?
-    bcc nothex              ; no, character not hex 
-
-dig:
-    asl                     ; hex digit to msd of a
+    asl                 ; Hex digit to MSD of A.
     asl
     asl
-    asl
-    ldx #$04                ; shift count 
 
-hexshift:
-    asl                     ; hew digit left, msb to carry 
-    rol l                   ; rotate into lsd
-    rol h                   ; rotate into msd's
-    dex                     ; done 4 shifts 
-    bne hexshift            ; no, loop 
-    iny                     ; advance text index 
-    bne nexthex             ; alway taken. check next character for hex
+    ldx #$04            ; Shift count.
 
-nothex:
-    cpy ysav                ; check if l, h empty (no hex digits)
-    beq escape              ; yes generate esc sequence 
-    bit mode                ; test mode byte 
-    bvc notstor             ; b6=0 is stor, 1 is xam and block xam 
-    lda l                   ; lsd's of hex data 
-    sta (stl, x)            ; store current 'store index'
-    inc stl                 ; increment store index 
-    bne nextitem            ; get next item (no carry)
-    inc sth                 ; add carry to 'store index' high order 
+@hexshift:
+    asl                 ; Hex digit left, MSB to carry.
+    rol l               ; Rotate into LSD.
+    rol h               ; Rotate into MSD's.
+    dex                 ; Done 4 shifts?
+    bne @hexshift       ; No, loop.
+    iny                 ; Advance text index.
+    bne @nexthex        ; Always taken. Check next character for hex.
 
-tonextitem:
-    jmp nextitem            ; get next command item 
+@nothex:
+    cpy ysav            ; Check if L, H empty (no hex digits).
+    beq @escape         ; Yes, generate ESC sequence.
 
-run:
-    jmp (xaml)              ; run at current xam index 
+    bit mode            ; Test MODE byte.
+    bvc @notstor        ; B6=0 is STOR, 1 is XAM and BLOCK XAM.
 
-notstor:
-    bmi xamnext             ; b7=0 for xam, 1 for block xam
-    ldx #$02                ; byte count
-setadr:
-    lda l-1, x              ; copy hex data to 
-    sta stl-1, x            ;  store index 
-    sta xaml-1, x           ; and to xam index 
-    dex                     ; next of 2 bytes 
-    bne setadr              ; loop unless x=0
+    lda l               ; LSD's of hex data.
+    sta (stl,x)         ; Store current 'store index'.
+    inc stl             ; Increment store index.
+    bne @nextitem       ; Get next item (no carry).
+    inc sth             ; Add carry to 'store index' high order.
 
-nxtprnt:
-    bne prdata              ; NE means no address to print 
-    lda #$0d                ; CR
-    jsr echo                ; output it
-    lda xamh                ; examine index high order byte 
-    jsr prbyte              ; output it in hex format 
-    lda #$3a                ; ':'
-    jsr echo                ; output it 
+@tonextitem:     
+    jmp @nextitem       ; Get next command item.
 
-prdata:
-    lda #$20                ; blank
-    jsr echo                ; output it.
-    lda (xaml, x)           ; get data byte at 'examine index'
-    jsr prbyte              ; output it in hex format 
+@run:
+    jmp (xaml)          ; Run at current XAM index.
 
-xamnext:
-    stx mode                ; 0-<mode (xam mode)
-    lda xaml                ; 
-    cmp l                   ; compare 'examine index' to hex data
+@notstor:
+    bmi @xamnext        ; B7 = 0 for XAM, 1 for BLOCK XAM.
+
+    ldx #$02            ; Byte count.
+
+@setadr: 
+    lda l-1,x           ; Copy hex data to
+    sta stl-1,x         ;  'store index'.
+    sta xaml-1,x        ; And to 'XAM index'.
+    dex                 ; Next of 2 bytes.
+    bne @setadr         ; Loop unless X = 0.
+
+@nxtprnt:
+    bne @prdata         ; NE means no address to print.
+    lda #$0d            ; CR.
+    jsr @echo           ; Output it.
+    lda xamh            ; 'Examine index' high-order byte.
+    jsr @prbyte         ; Output it in hex format.
+    lda xaml            ; Low-order 'examine index' byte.
+    jsr @prbyte         ; Output it in hex format.
+    lda #$3a            ; ":".
+    jsr @echo           ; Output it.
+
+@prdata:
+    lda #$20            ; Blank.
+    jsr @echo           ; Output it.
+    lda (xaml,x)        ; Get data byte at 'examine index'.
+    jsr @prbyte         ; Output it in hex format.
+
+@xamnext:
+    stx mode            ; 0 -> MODE (XAM mode).
+    lda xaml
+    cmp l               ; Compare 'examine index' to hex data.
     lda xamh
     sbc h
-    bcs tonextitem          ; not less, so no more data to output 
+    bcs @tonextitem     ; Not less, so no more data to output.
 
     inc xaml
-    bne mod8chk             ; increment examine header 
+    bne @mod8chk        ; Increment 'examine index'.
     inc xamh
 
-mod8chk:
-    lda xaml                ; check low order examine index byte 
-    and #$07                ; increment examine index 
-    bpl nxtprnt             ; always taken 
+@mod8chk:
+    lda xaml            ; Check low-order 'examine index' byte
+    and #$07            ; For MOD 8 = 0
+    bpl @nxtprnt        ; Always taken.
 
-prbyte:
-    pha                     ; save a for lsd 
+@prbyte:
+    pha                 ; Save A for LSD.
     lsr
     lsr
+    lsr                 ; MSD to LSD position.
     lsr
-    lsr
-    jsr prhex               ; output hex digit 
-    pla 
+    jsr @prhex          ; Output hex digit.
+    pla                 ; Restore A.
 
-prhex:
-    and #$0f                ; mask lsd for hex print 
-    ora #$30                ; add "0"
-    cmp #$3a                ; digit?
-    bcc echo                ; yes, output it
-    adc #$06                ; add offset for letter 
+@prhex:
+    and #$0f            ; Mask LSD for hex print.
+    ora #$30            ; Add "0".
+    cmp #$3a            ; Digit?
+    bcc @echo           ; Yes, output it.
+    adc #$06            ; Add offset for letter.
 
-echo:
-    pha                     ; save a
-    sta ACIA_DATA           ; output character 
-    lda #$ff                ; init loop
-txdelay:
-    dec                     ; decrement a 
-    bne txdelay             ; until a gets to 0
-    pla 
-    rts
+@echo:
+    pha                 ; Save A.
+    sta ACIA_DATA       ; Output character.
+    lda #$ff            ; Initialize delay loop.
+@txdelay:        
+    dec                 ; Decrement A.
+    bne @txdelay        ; Until A gets to 0.
+    pla                 ; Restore A.
+    rts                 ; Return.
 
+wozmanend:

@@ -1,5 +1,5 @@
 .setcpu "65C02"
-.segment "ROM"
+.segment "rom"
 
 IO_PORTB            = $8000
 IO_PORTA            = $8001
@@ -100,7 +100,7 @@ display_busy:
 
 message: .asciiz "Danny's Computer"
 
-.segment "VEC"
+.segment "vec"
 .word $0000
 .word rom 
 .word $0000

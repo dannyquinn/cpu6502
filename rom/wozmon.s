@@ -8,18 +8,18 @@ stl   = $26             ; Store address Low
 sth   = $27             ; Store address High
 l     = $28             ; Hex value parsing Low
 h     = $29             ; Hex value parsing High
-ysav  = $2A             ; Used to see if hex value is given
-mode  = $2B             ; $00=XAM, $7F=STOR, $AE=BLOCK XAM
+ysav  = $2a             ; Used to see if hex value is given
+mode  = $2b             ; $00=XAM, $7F=STOR, $AE=BLOCK XAM
 
 in    = $0200           ; Input buffer
 
 wozman:
 @reset:
-    lda #$1F            ; 8-N-1, 19200 baud.
+    lda #$1f            ; 8-N-1, 19200 baud.
     sta ACIA_CONTROL
-    lda #$0B            ; No parity, no echo, no interrupts.
+    lda #$0b            ; No parity, no echo, no interrupts.
     sta ACIA_COMMAND
-    lda #$1B            ; Begin with escape.
+    lda #$1b            ; Begin with escape.
 
 @notcr:
     cmp #$08            ; Backspace key?
@@ -49,7 +49,7 @@ wozman:
     lda ACIA_DATA       ; Load character. B7 will be '0'.
     sta in,y            ; Add to text buffer.
     jsr @echo           ; Display character.
-    cmp #$0D            ; CR?
+    cmp #$0d            ; CR?
     bne @notcr          ; No.
 
     ldy #$ff            ; Reset text index.

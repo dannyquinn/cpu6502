@@ -6,5 +6,5 @@ rom:
 
 .segment "vec"
 .word $0000 
-.word rom 
+.word wozman 
 .word $0000

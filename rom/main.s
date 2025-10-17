@@ -1,6 +1,7 @@
 .setcpu "65C02"
 .segment "rom"
 .include "constant.s"
+.include "bios.s"
 rom:
 .include "wozmon.s"
 

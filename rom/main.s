@@ -2,7 +2,6 @@
 .segment "rom"
 .include "constant.s"
 .include "bios.s"
-rom:
 .include "wozmon.s"
 
 .segment "vec"

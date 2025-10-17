@@ -2,16 +2,16 @@
 .include "constant.s"
 .segment "woz"
 
-xaml  = $24                            ; Last "opened" location Low
-xamh  = $25                            ; Last "opened" location High
-stl   = $26                            ; Store address Low
-sth   = $27                            ; Store address High
-l     = $28                            ; Hex value parsing Low
-h     = $29                            ; Hex value parsing High
-ysav  = $2A                            ; Used to see if hex value is given
-mode  = $2B                            ; $00=XAM, $7F=STOR, $AE=BLOCK XAM
+xaml  = $24                 ; Last "opened" location Low
+xamh  = $25                 ; Last "opened" location High
+stl   = $26                 ; Store address Low
+sth   = $27                 ; Store address High
+l     = $28                 ; Hex value parsing Low
+h     = $29                 ; Hex value parsing High
+ysav  = $2A                 ; Used to see if hex value is given
+mode  = $2B                 ; $00=XAM, $7F=STOR, $AE=BLOCK XAM
 
-in    = $0200                          ; Input buffer
+in    = $0200               ; Input buffer
 
 wozman:
 @reset:
@@ -19,8 +19,10 @@ wozman:
     sta ACIA_CONTROL
     lda #$0b                ; No parity, no echo, no interrupts.
     sta ACIA_COMMAND
+    jsr clear               ; reset terminal window
+
     lda #$1b                ; Begin with escape.
-    jsr clear 
+    
 
 @notcr:
     cmp #$7f                ; Backspace key?

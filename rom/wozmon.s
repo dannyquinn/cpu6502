@@ -8,8 +8,8 @@ stl   = $26                 ; Store address Low
 sth   = $27                 ; Store address High
 l     = $28                 ; Hex value parsing Low
 h     = $29                 ; Hex value parsing High
-ysav  = $2A                 ; Used to see if hex value is given
-mode  = $2B                 ; $00=XAM, $7F=STOR, $AE=BLOCK XAM
+ysav  = $2a                 ; Used to see if hex value is given
+mode  = $2b                 ; $00=XAM, $7F=STOR, $AE=BLOCK XAM
 
 in    = $0200               ; Input buffer
 
@@ -144,7 +144,7 @@ wozman:
 @prdata:
     lda #$20                ; Blank.
     jsr chrout              ; Output it.
-    lda (xaml,X)            ; Get data byte at 'examine index'.
+    lda (xaml,x)            ; Get data byte at 'examine index'.
     jsr @prbyte             ; Output it in hex format.
 @xamnext:        
     stx mode                ; 0 -> MODE (XAM mode).
@@ -171,15 +171,13 @@ wozman:
     lsr
     jsr @prhex              ; Output hex digit.
     pla                     ; Restore A.
-
 @prhex:
     and #$0f                ; Mask LSD for hex print.
     ora #$30                ; Add "0".
     cmp #$3a                ; Digit?
-    bcc @echo               ; Yes, output it.
+    bcc @precho             ; Yes, output it.
     adc #$06                ; Add offset for letter.
-
-@echo:
+@precho:
     jsr chrout 
     rts                    ; Return.
 

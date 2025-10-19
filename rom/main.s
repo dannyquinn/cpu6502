@@ -7,8 +7,8 @@ run_test:
     ldy #0 
 @sendloop:
     lda message, y 
-    iny
     jsr chrout 
+    iny
     bne @sendloop 
 
 halt:

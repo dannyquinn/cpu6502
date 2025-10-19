@@ -49,7 +49,6 @@ wozman:
     jsr chrin 
     bcc @nextchar
     sta in,y                ; Add to text buffer.
-    jsr chrout              ; Display character.
     cmp #$0d                ; CR?
     bne @notcr              ; No.
 

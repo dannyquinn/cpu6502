@@ -6,7 +6,7 @@ chrin:
     and #08             ; char in buffer?
     beq @no_keypressed 
     lda ACIA_DATA 
-    ;//jsr chrout          ; echo
+    jsr chrout          ; echo
     sec 
     rts 
 @no_keypressed:
@@ -14,63 +14,43 @@ chrin:
     rts
 
 chrout:
-    pha                 ; Save A.
-
-     sta ACIA_DATA       ; Output character.
-     lda #$ff            ; Initialize delay loop.
- @txdelay:        
-     dec                 ; Decrement A.
-     bne @txdelay        ; Until A gets to 0.
-     pla                 ; Restore A.
-     cmp #$0d           ; Fix this it's horrible
-     beq @send_lf
-     rts                 ; Return.
-
-@send_lf: 
     pha 
-    lda #$0a 
-    sta ACIA_DATA 
-    lda #$ff 
-txdelay2:
-    dec 
-    bne txdelay2 
+    cmp #$0d            ; CR 
+    bne @notcr          ; if not CR then send and return
+    jsr @sendchar 
+    lda #$0a            ; send LF after CR 
+@notcr: 
+    jsr @sendchar 
     pla 
-    rts
+    rts 
+
+@sendchar: 
+    sta ACIA_DATA       ; send character to uart 
+    lda #$ff 
+@txdelay:               ; wait for completion
+    dec                 
+    bne @txdelay 
+    rts 
 
 clear: 
-    lda #$1b 
-    jsr chrout
-    lda #$5b 
-    jsr chrout
-    lda #$32 
-    jsr chrout
-    lda #$4a 
-    jsr chrout
-    lda #$1b 
-    jsr chrout
-    lda #$5b 
-    jsr chrout
-    lda #$48 
-    jsr chrout
+    phx 
+    pha
+    ldx #0 
+@clearloop:
+    lda clearscreen, x  ; load each byte of clearscreen in turn
+    sta ACIA_DATA 
+    lda #$ff 
+@txdelay:
+    dec 
+    bne @txdelay
+    inx 
+    cpx #7 
+    bne @clearloop 
+    pla 
+    plx 
     rts 
-;     cmp #$0d            ; custom code for cr+lf 
-;     bne @normal_char 
 
-;     pha                 ; save accumulator
-;     lda #$0d 
-;     jsr @send_byte      ; send cr 
-;     lda #$0a 
-;     jsr @send_byte      ; send lf 
-;     pla 
-;     rts 
-    
-; @normal_char:
-;     pha                 ; save accumulator
-; @send_byte:
-;     sta ACIA_DATA 
-;     lda #$ff 
-; @txdelay:
-;     dec 
-;     bne @txdelay 
-;     pla                 ; restore accumulator 
-;     rts 
+clearscreen: .byte $1b, $5b, $32, $4a, $1b, $5b, $48
+
+
+

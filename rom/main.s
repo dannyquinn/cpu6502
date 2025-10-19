@@ -7,9 +7,10 @@ run_test:
     ldy #0 
 @sendloop:
     lda message, y 
+    beq halt
     jsr chrout 
     iny
-    bne @sendloop 
+    jmp @sendloop 
 
 halt:
     jmp halt

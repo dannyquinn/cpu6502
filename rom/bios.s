@@ -26,9 +26,10 @@ chrout:
 
 @sendchar: 
     sta ACIA_DATA       ; send character to uart 
-    lda #$ff 
+    lda #120 
 @txdelay:               ; wait for completion
-    dec                 
+    dec      
+    nop           
     bne @txdelay 
     rts 
 
@@ -39,9 +40,10 @@ clear:
 @clearloop:
     lda clearscreen, x  ; load each byte of clearscreen in turn
     sta ACIA_DATA 
-    lda #$ff 
+    lda #120
 @txdelay:
     dec 
+    nop
     bne @txdelay
     inx 
     cpx #7 
@@ -51,6 +53,5 @@ clear:
     rts 
 
 clearscreen: .byte $1b, $5b, $32, $4a, $1b, $5b, $48
-
 
 

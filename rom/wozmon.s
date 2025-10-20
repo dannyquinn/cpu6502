@@ -39,6 +39,8 @@ wozman:
 @getline:
     lda #$0d                ; Send CR
     jsr chrout
+    lda #$3e 
+    jsr chrout
 
     ldy #$01                ; Initialize text index.
 @backspace:

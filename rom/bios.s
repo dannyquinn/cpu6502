@@ -20,6 +20,14 @@ chrout:
     jsr @sendchar 
     lda #$0a            ; send LF after CR 
 @notcr: 
+    cmp #$7f            ; BS?
+    bne @notbs
+    lda #$08            ; echo 08 for bs instead of 7f
+    jsr @sendchar 
+    lda #$20 
+    jsr @sendchar
+    lda #$08            
+@notbs:
     jsr @sendchar 
     pla 
     rts 

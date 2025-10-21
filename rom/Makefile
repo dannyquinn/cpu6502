@@ -21,10 +21,12 @@ $(EXECUTABLE): $(OBJECT_FILE)
 hexdump_output: $(EXECUTABLE)
 	@echo "Generating hexdump..."
 	hexdump -C $<
+	rm -f *.o *.out 
 
 write: $(EXECUTABLE)
 	@echo "Writing $< to ROM chip..."
 	minipro -p AT28C256 -w $<
+	rm -f *.o *.out 
 
 default: all
 
